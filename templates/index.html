@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Congressional Trade Monitor</title>
+ <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+ <main class="shell">
+  <header class="hero">
+   <div class="hero-copy">
+    <p class="eyebrow">Public Disclosure Intelligence</p>
+    <h1>Congressional Trade Monitor</h1>
+    <div class="hero-metric">
+     <span>Latest signal</span>
+     <strong>{{ data.get("Type", "Pending")|title }}</strong>
+     <small>{{ data.get("Trade Issuer", "Awaiting source data") }}</small>
+    </div>
+   </div>
+   <form action="{{ url_for('email') }}" method="post">
+    <button type="submit">Send alert</button>
+   </form>
+  </header>
+
+  {% if email_status == "sent" %}
+  <section class="notice success">Email alert sent for the latest disclosure.</section>
+  {% elif email_status == "failed" %}
+  <section class="notice danger">Email alert failed. {{ email_error or "Check your email settings and app password." }}</section>
+  {% elif email_status == "source_failed" %}
+  <section class="notice danger">Email alert was not sent because the latest disclosure could not be loaded.</section>
+  {% endif %}
+
+  {% if error %}
+  <section class="notice warning">{{ error }}</section>
+  {% endif %}
+
+  {% if using_cache %}
+  <section class="notice info">Showing cached disclosure data. Next refresh window: {{ cache_seconds // 60 }} minutes.</section>
+  {% endif %}
+
+  <section class="terminal-grid">
+   <section class="panel overview-panel" aria-label="Latest disclosure overview">
+    <div class="panel-heading">
+     <div>
+      <p class="eyebrow">Latest Disclosure</p>
+      <h2>{{ data.get("Trade Issuer", "No disclosure loaded") }}</h2>
+     </div>
+     <span class="badge">{{ data.get("Published", "Pending") }}</span>
+    </div>
+
+    <div class="overview-grid">
+     <div class="overview-card">
+      <span>Politician</span>
+      <strong>{{ data.get("Politician", "Unavailable") }}</strong>
+     </div>
+     <div class="overview-card">
+      <span>Transaction</span>
+      <strong class="{% if data.get('Type', '').lower() == 'sell' %}negative{% else %}positive{% endif %}">{{ data.get("Type", "Unavailable")|title }}</strong>
+     </div>
+     <div class="overview-card">
+      <span>Position Size</span>
+      <strong>{{ data.get("Size", "Unavailable") }}</strong>
+     </div>
+     <div class="overview-card">
+      <span>Reported Price</span>
+      <strong>{{ data.get("Price", "Unavailable") }}</strong>
+     </div>
+    </div>
+
+    <div class="recent-feed">
+     <div class="feed-heading">
+      <span>Recent scraped disclosures</span>
+      <strong>{{ trades|length }} loaded</strong>
+     </div>
+     {% for trade in trades[:5] %}
+     <article>
+      <div>
+       <strong>{{ trade.get("Trade Issuer", "Unknown issuer") }}</strong>
+       <span>{{ trade.get("Politician", "Unknown politician") }}</span>
+      </div>
+      <div>
+       <strong class="{% if trade.get('Type', '').lower() == 'sell' %}negative{% else %}positive{% endif %}">{{ trade.get("Type", "Trade")|title }}</strong>
+       <span>{{ trade.get("Published", "Unknown") }}</span>
+      </div>
+     </article>
+     {% endfor %}
+    </div>
+   </section>
+
+   <aside class="panel intelligence-panel">
+    <p class="eyebrow">Latest Filing</p>
+    <h2>{{ data.get("Trade Issuer", "No disclosure loaded") }}</h2>
+    <p class="side-copy">{{ data.get("Politician", "Awaiting politician data") }}</p>
+    <div class="action-stack">
+     <form action="{{ url_for('email') }}" method="post">
+      <button type="submit">Send alert</button>
+     </form>
+     <a href="https://www.capitoltrades.com/trades" target="_blank" rel="noreferrer">View source</a>
+    </div>
+    <div class="status-list">
+     <div>
+      <span>Source</span>
+      <strong>Capitol Trades</strong>
+     </div>
+     <div>
+     <span>Last checked</span>
+      <strong>{{ last_checked_label }}</strong>
+     </div>
+     <div>
+      <span>Source published</span>
+      <strong>{{ data.get("Published", "Unavailable") }}</strong>
+     </div>
+     <div>
+      <span>Source traded</span>
+      <strong>{{ data.get("Traded", "Unavailable") }}</strong>
+     </div>
+     <div>
+      <span>Data mode</span>
+      <strong>{% if using_cache %}Cached{% else %}Fresh{% endif %}</strong>
+     </div>
+     <div>
+      <span>Email action</span>
+      <strong>{% if email_status == "sent" %}Sent{% elif email_status == "failed" %}Needs attention{% elif email_status == "source_failed" %}Source unavailable{% else %}Ready{% endif %}</strong>
+     </div>
+    </div>
+   </aside>
+  </section>
+
+  <section class="kpi-grid" aria-label="Latest disclosure summary">
+   <article class="metric">
+    <span>Politician</span>
+    <strong>{{ data.get("Politician", "Unavailable") }}</strong>
+   </article>
+   <article class="metric">
+    <span>Issuer</span>
+    <strong>{{ data.get("Trade Issuer", "Unavailable") }}</strong>
+   </article>
+   <article class="metric">
+    <span>Transaction</span>
+    <strong class="{% if data.get('Type', '').lower() == 'sell' %}negative{% else %}positive{% endif %}">{{ data.get("Type", "Unavailable")|title }}</strong>
+   </article>
+   <article class="metric">
+    <span>Position Size</span>
+    <strong>{{ data.get("Size", "Unavailable") }}</strong>
+   </article>
+  </section>
+
+  <section class="panel details-panel">
+   <div class="panel-heading">
+    <div>
+     <p class="eyebrow">Disclosure Record</p>
+     <h2>Filing details</h2>
+    </div>
+    <span class="badge">{{ data.get("Price", "Price pending") }}</span>
+   </div>
+
+   <dl class="trade-details">
+    {% for key, value in data.items() %}
+    <div>
+     <dt>{{ key }}</dt>
+     <dd>{{ value }}</dd>
+    </div>
+    {% endfor %}
+   </dl>
+ </section>
+ </main>
+</body>
+
+</html>
