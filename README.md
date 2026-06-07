@@ -2,6 +2,16 @@
 
 A Flask dashboard that monitors public congressional trade disclosures from Capitol Trades and sends polished email alerts for the latest filing.
 
+## Preview
+
+### Dashboard
+
+![Congressional Trade Monitor dashboard](static/dashboard.png)
+
+### Email Alert
+
+![Congressional Trade Monitor email alert](static/user.png)
+
 ## Features
 
 - Clean dashboard for the latest public disclosure
